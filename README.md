@@ -86,3 +86,8 @@ PasteTemplate := "[{label}]"
 ```
 
 Use a shorter TTL if you want more aggressive cleanup.
+
+## Acknowledgements
+
+- Thanks to the [Linux.do](https://linux.do/) community for feedback and
+  discussion.
