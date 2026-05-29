@@ -1,6 +1,7 @@
 # Clipboard Image Paste Helper
 
-Paste WeChat/QQ Windows screenshots into terminal-based agents with `Ctrl+V`.
+Paste WeChat/QQ Windows screenshots into terminal-based agents with `Ctrl+V`,
+and save copied browser images directly into Windows Explorer folders.
 
 This project is primarily a Windows helper, not just a Codex skill.
 
@@ -21,7 +22,8 @@ filesystem.
 ## What Each Part Does
 
 - `scripts/terminal-image-paste.ahk`: the core helper. It intercepts `Ctrl+V`
-  in terminal windows and inserts `[imageN]`.
+  in terminal windows and inserts `[imageN]`. In Windows Explorer folders, it
+  saves clipboard images as PNG files.
 - `scripts/save-clipboard-image.ps1`: saves the current clipboard image as PNG.
 - `scripts/resolve-image-label.ps1`: resolves `[imageN]` to a PNG path through
   `%TEMP%\cli-clipboard-images\manifest.tsv`.
@@ -54,10 +56,19 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install-terminal-helper.ps1 -
 
 ## Use
 
+Terminal agents:
+
 1. Take a screenshot with WeChat or QQ and click the confirm checkmark.
 2. Focus Codex, Claude Code, Hermes, or another terminal agent.
 3. Press `Ctrl+V`.
 4. The terminal receives `[image1]`, `[image2]`, etc.
+
+Windows Explorer:
+
+1. Copy an image from Chrome or another app.
+2. Focus a File Explorer folder.
+3. Press `Ctrl+V`.
+4. The helper creates `clipboard-image-yyyyMMdd-HHmmss.png` in that folder.
 
 ## Diagnose
 
@@ -75,6 +86,9 @@ Images are written to:
 
 The helper checks every 10 minutes and deletes PNG files older than 6 hours.
 The manifest is pruned when images are removed.
+
+Explorer-saved images are real files in the folder you pasted into. They are not
+temporary files and are not deleted by the helper.
 
 ## Tuning
 

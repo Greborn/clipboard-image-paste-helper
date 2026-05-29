@@ -25,6 +25,28 @@ DirCreate TempRoot
 SetTimer CleanupOldImages, 10 * 60 * 1000
 CleanupOldImages()
 
+#HotIf IsExplorerActive()
+^v::{
+    if !HasClipboardImage() {
+        Send "^v"
+        return
+    }
+
+    folder := GetActiveExplorerFolder()
+    if !folder {
+        Send "^v"
+        return
+    }
+
+    path := BuildExplorerImagePath(folder)
+    if SaveClipboardImageTo(path) {
+        return
+    }
+
+    Send "^v"
+}
+#HotIf
+
 #HotIf IsTerminalActive()
 ^v::{
     if !HasClipboardImage() {
@@ -80,6 +102,47 @@ IsTerminalActive() {
         || className = "ConsoleWindowClass"
 }
 
+IsExplorerActive() {
+    try {
+        processName := WinGetProcessName("A")
+        className := WinGetClass("A")
+    } catch {
+        return false
+    }
+
+    return processName = "explorer.exe"
+        && (className = "CabinetWClass" || className = "ExploreWClass")
+}
+
+GetActiveExplorerFolder() {
+    hwnd := WinGetID("A")
+    shell := ComObject("Shell.Application")
+
+    for window in shell.Windows {
+        try {
+            if window.HWND = hwnd {
+                return window.Document.Folder.Self.Path
+            }
+        }
+    }
+
+    return ""
+}
+
+BuildExplorerImagePath(folder) {
+    stamp := FormatTime(, "yyyyMMdd-HHmmss")
+    base := folder "\clipboard-image-" stamp
+    path := base ".png"
+    index := 1
+
+    while FileExist(path) {
+        path := base "-" index ".png"
+        index += 1
+    }
+
+    return path
+}
+
 HasClipboardImage() {
     ; CF_BITMAP = 2, CF_DIB = 8, CF_DIBV5 = 17.
     return DllCall("IsClipboardFormatAvailable", "UInt", 2)
@@ -94,15 +157,17 @@ SaveClipboardImage() {
     stamp := FormatTime(, "yyyyMMdd-HHmmss")
     path := TempRoot "\clip-" stamp "-" Random(1000, 9999) ".png"
 
+    return SaveClipboardImageTo(path) ? path : ""
+}
+
+SaveClipboardImageTo(path) {
+    scriptPath := A_ScriptDir "\save-clipboard-image.ps1"
+
     command := 'powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File "'
         . scriptPath . '" -Path "' . path . '"'
 
     exitCode := RunWait(command, , "Hide")
-    if exitCode != 0 || !FileExist(path) {
-        return ""
-    }
-
-    return path
+    return exitCode = 0 && FileExist(path)
 }
 
 RegisterImage(path) {
